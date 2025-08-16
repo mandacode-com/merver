@@ -25,14 +25,18 @@ func GRPCZeroLogger(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 		peer, ok := peer.FromContext(ctx)
 
 		var addr string
-		var userAgent string
+		var authType string
 
 		if ok {
 			addr = peer.Addr.String()
-			userAgent = peer.AuthInfo.AuthType()
+			if ua, ok := peer.AuthInfo.(interface{ AuthType() string }); ok {
+				authType = ua.AuthType()
+			} else {
+				authType = "no auth info"
+			}
 		} else {
 			addr = "unknown"
-			userAgent = "unknown"
+			authType = "unknown"
 		}
 
 		if err != nil {
@@ -43,7 +47,7 @@ func GRPCZeroLogger(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 				Str("status", status.Code(err).String()).
 				Str("trace", fmt.Sprintf("%+v", err)).
 				Str("ip", addr).
-				Str("user_agent", userAgent).
+				Str("auth_info", authType).
 				Msg("gRPC request error")
 		} else if resp == nil {
 			if logger.GetLevel() == zerolog.WarnLevel {
@@ -52,7 +56,7 @@ func GRPCZeroLogger(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 					Dur("duration", duration).
 					Str("status", status.Code(err).String()).
 					Str("ip", addr).
-					Str("user_agent", userAgent).
+					Str("auth_info", authType).
 					Msg("gRPC request completed with warning: nil response")
 			}
 		} else {
@@ -62,7 +66,7 @@ func GRPCZeroLogger(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 					Dur("duration", duration).
 					Str("status", status.Code(err).String()).
 					Str("ip", addr).
-					Str("user_agent", userAgent).
+					Str("auth_info", authType).
 					Msg("gRPC request completed")
 			}
 		}
