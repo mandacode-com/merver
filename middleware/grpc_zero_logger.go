@@ -39,36 +39,42 @@ func GRPCZeroLogger(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 			authType = "unknown"
 		}
 
-		if err != nil {
-			logger.Error().
-				Err(err).
+		level := logger.GetLevel()
+
+		if err != nil && level <= zerolog.ErrorLevel {
+			event := logger.Error()
+
+			event.Err(err).
 				Str("method", info.FullMethod).
 				Dur("duration", duration).
 				Str("status", status.Code(err).String()).
-				Str("trace", fmt.Sprintf("%+v", err)).
 				Str("ip", addr).
-				Str("auth_info", authType).
-				Msg("gRPC request error")
-		} else if resp == nil {
-			if logger.GetLevel() == zerolog.WarnLevel {
-				logger.Warn().
-					Str("method", info.FullMethod).
-					Dur("duration", duration).
-					Str("status", status.Code(err).String()).
-					Str("ip", addr).
-					Str("auth_info", authType).
-					Msg("gRPC request completed with warning: nil response")
+				Str("auth_info", authType)
+
+			if level <= zerolog.TraceLevel {
+				event.Str("trace", fmt.Sprintf("%+v", err))
 			}
-		} else {
-			if logger.GetLevel() == zerolog.InfoLevel {
-				logger.Info().
-					Str("method", info.FullMethod).
-					Dur("duration", duration).
-					Str("status", status.Code(err).String()).
-					Str("ip", addr).
-					Str("auth_info", authType).
-					Msg("gRPC request completed")
-			}
+
+			event.Msg("gRPC request error")
+		} else if resp == nil && level <= zerolog.WarnLevel {
+			event := logger.Warn()
+
+			event.Str("method", info.FullMethod).
+				Dur("duration", duration).
+				Str("status", status.Code(err).String()).
+				Str("ip", addr).
+				Str("auth_info", authType)
+
+			event.Msg("gRPC request completed with warning: nil response")
+		} else if level <= zerolog.InfoLevel {
+			event := logger.Info()
+			event.Str("method", info.FullMethod).
+				Dur("duration", duration).
+				Str("status", status.Code(err).String()).
+				Str("ip", addr).
+				Str("auth_info", authType)
+
+			event.Msg("gRPC request completed")
 		}
 
 		return resp, err
