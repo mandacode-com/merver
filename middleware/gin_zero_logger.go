@@ -20,25 +20,35 @@ func GinZeroLogger(logger *zerolog.Logger) gin.HandlerFunc {
 					Err(err.Err).
 					Str("method", c.Request.Method).
 					Str("path", c.Request.URL.Path).
+					Str("ip", c.ClientIP()).
+					Str("user_agent", c.Request.UserAgent()).
 					Str("trace", fmt.Sprintf("%+v", err.Err)).
 					Int("status", c.Writer.Status()).
 					Dur("duration", duration).
 					Msg("HTTP request error")
 			}
 		} else if c.Writer.Status() >= 400 {
-			logger.Warn().
-				Str("method", c.Request.Method).
-				Str("path", c.Request.URL.Path).
-				Int("status", c.Writer.Status()).
-				Dur("duration", duration).
-				Msg("HTTP request completed with warning")
+			if logger.GetLevel() == zerolog.WarnLevel {
+				logger.Warn().
+					Str("method", c.Request.Method).
+					Str("path", c.Request.URL.Path).
+					Int("status", c.Writer.Status()).
+					Dur("duration", duration).
+					Str("ip", c.ClientIP()).
+					Str("user_agent", c.Request.UserAgent()).
+					Msg("HTTP request completed with warning")
+			}
 		} else {
-			logger.Info().
-				Str("method", c.Request.Method).
-				Str("path", c.Request.URL.Path).
-				Int("status", c.Writer.Status()).
-				Dur("duration", duration).
-				Msg("HTTP request completed")
+			if logger.GetLevel() == zerolog.InfoLevel {
+				logger.Info().
+					Str("method", c.Request.Method).
+					Str("path", c.Request.URL.Path).
+					Int("status", c.Writer.Status()).
+					Dur("duration", duration).
+					Str("ip", c.ClientIP()).
+					Str("user_agent", c.Request.UserAgent()).
+					Msg("HTTP request completed")
+			}
 		}
 	}
 }
