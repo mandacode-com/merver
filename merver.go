@@ -7,8 +7,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"github.com/mandacode-com/merr"
 )
 
 type Server interface {
@@ -36,7 +34,7 @@ func (sm *ServerGroup) Run(ctx context.Context) error {
 		go func(s Server) {
 			defer wg.Done()
 			if err := s.Run(ctx); err != nil {
-				errCh <- merr.New(merr.ErrInternalServerError, "Failed to run server", err.Error(), err)
+				errCh <- err
 			}
 		}(server)
 	}
@@ -55,7 +53,7 @@ func (sm *ServerGroup) Run(ctx context.Context) error {
 	// Graceful shutdown
 	for _, server := range sm.servers {
 		if err := server.Stop(ctx); err != nil {
-			return merr.New(merr.ErrInternalServerError, "Failed to stop server", err.Error(), err)
+			return err
 		}
 	}
 

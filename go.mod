@@ -4,7 +4,6 @@ go 1.24.5
 
 require (
 	github.com/gin-gonic/gin v1.10.1
-	github.com/mandacode-com/merr v0.1.1
 	github.com/rs/zerolog v1.34.0
 	google.golang.org/grpc v1.74.2
 )
