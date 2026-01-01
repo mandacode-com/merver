@@ -1,4 +1,4 @@
-module github.com/mandacode-com/merver
+module github.com/go-mandacode/merver
 
 go 1.24.5
 
